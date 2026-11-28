@@ -813,6 +813,45 @@ JsonObject general_choice_projection(const JsonObject& current,
         "A general choice revision changed another answer, guide or field");
     return projected;
 }
+JsonObject general_choice_after(const JsonObject& record) {
+    const auto original=record.GetNamedObject(L"block");
+    const auto result=JsonObject::Parse(original.Stringify());
+    const auto count=array(original,"options").Size();
+    require(count>0,"A general choice revision needs original options");
+    const auto index=integer(record.GetNamedValue(L"optionIndex"),count-1);
+    result.GetNamedArray(L"options").SetAt(static_cast<unsigned>(index),record.GetNamedValue(L"replacement"));
+    return result;
+}
+JsonObject general_choice_projection(const JsonObject& current,
+        const std::vector<JsonObject>& revisions,bool allow_original=false,bool reading_snapshot=false) {
+    require(!revisions.empty(),"Missing general choice history");
+    if(revisions.size()==1)return general_choice_projection(current,revisions.front(),allow_original,reading_snapshot);
+    const auto origin=revisions.front().GetNamedObject(L"block");
+    const auto options_digest=[&](const JsonObject& block){return fingerprint(array(block,"options"));};
+    auto endpoint=general_choice_after(revisions.front());
+    bool historical=options_digest(current)==options_digest(origin)||options_digest(current)==options_digest(endpoint);
+    for(std::size_t i=1;i<revisions.size();++i){
+        const auto previous=revisions[i].GetNamedObject(L"block");
+        require(options_digest(previous)==options_digest(endpoint),
+            "A later option revision changed an unauthenticated sibling");
+        (void)general_choice_projection(previous,revisions[i-1]);
+        endpoint=general_choice_after(revisions[i]);
+        historical=historical||options_digest(current)==options_digest(endpoint);
+    }
+    if(reading_snapshot)require(allow_original&&historical,
+        "Historical choice does not belong to one complete option epoch");
+    else{
+        require(options_digest(current)==options_digest(endpoint),
+            "A general choice history does not match its active options");
+        (void)general_choice_projection(current,revisions.back());
+    }
+    auto projected=JsonObject::Parse(current.Stringify());
+    projected.Insert(L"options",origin.GetNamedValue(L"options"));
+    require(state_fingerprint(projected)==state_fingerprint(origin),
+        "A choice history changed its protected response contract");
+    return projected;
+}
+
 // Authenticate the previous public-text marker, not only the option bytes.
 // The root overlay is outside statePayload; without this archive, a choice
 // could silently alter old narration offsets while preserving its answer.
@@ -2909,7 +2948,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
     std::map<std::string,std::string> refined_order_signatures;
     std::map<std::string,const ReviewedChoice*> revised_choices;
-    std::map<std::string,JsonObject> general_choice_revisions;
+    std::map<std::string,std::vector<JsonObject>> general_choice_revisions;
     std::map<std::string,const ReviewedCompiler*> revised_compilers;
     std::map<std::string,const ReviewedCompiler*> revised_compiler_references;
     if(metadata.HasKey(L"compilerRevisions")) {
@@ -2944,32 +2983,65 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     if(metadata.HasKey(L"choiceRevisions")) {
         const auto records=array(metadata,"choiceRevisions");
         require(result.version==2&&
-                records.Size()<=reviewed_choices().size()+64&&
+                records.Size()<=100000&&
                 (!records.Size()||locale=="es"),
             "Choice revisions require their Spanish v2 ownership");
+        std::vector<std::pair<JsonObject,std::size_t>> semantic_revisions;
+        std::map<std::string,unsigned> last_ordinal;
+        const auto editorial=array(metadata,"editorial");
         for(const auto& value:records) {
             const auto item=value.GetObject();
             const auto id=text(item,"id");
+            const bool subsequent=general_choice_revisions.contains(id);
             require(valid_id(id)&&current_blocks.contains(id)&&
                     !revised_choices.contains(id)&&
-                    !general_choice_revisions.contains(id),
+                    (!subsequent||item.HasKey(L"editorialIndex")),
                 "Unknown, inactive or repeated choice revision identity");
             const auto* reviewed=reviewed_choice_owner(lesson_id,id);
             const auto snapshot=item.GetNamedObject(L"block");
-            std::optional<TextSemantics> previous_option_semantic;
             if(item.HasKey(L"optionIndex")) {
-                if(item.HasKey(L"semanticAfter"))
+                if(subsequent) {
+                    if(item.HasKey(L"semanticAfter"))
+                        allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore",
+                            "semanticAfter","semanticRootBefore","editorialIndex","historySha256"},true);
+                    else allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore",
+                            "editorialIndex","historySha256"},true);
+                }else if(item.HasKey(L"semanticAfter"))
                     allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore",
                         "semanticAfter","semanticRootBefore"},true);
                 else allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore"},true);
-                previous_option_semantic=validate_general_choice_semantic_archive(root,item);
+                auto origin=JsonObject::Parse(snapshot.Stringify());
+                if(subsequent)origin.Insert(L"options",general_choice_revisions.at(id).front().GetNamedObject(L"block").GetNamedValue(L"options"));
                 require(!reviewed&&text(snapshot,"type")=="multiple_choice"&&
-                        state_fingerprint(snapshot)==result.signatures.at(id),
+                        state_fingerprint(origin)==result.signatures.at(id),
                     "General choice archive must belong to an original unchanged answer");
-                // Validate index, type and nonempty replacement now; its
-                // authentic active bytes are checked below against this copy.
                 (void)general_choice_projection(snapshot,item,true);
-                general_choice_revisions.emplace(id,item);
+                const auto endpoint=general_choice_after(item);
+                const auto edge_matches=[&](const JsonObject& edge){
+                    return edge.Size()==3&&text(edge,"id")==id&&text(edge,"beforeSha256")==fingerprint(snapshot)
+                        &&text(edge,"afterSha256")==fingerprint(endpoint);
+                };
+                unsigned ordinal=0;
+                if(subsequent){
+                    ordinal=static_cast<unsigned>(integer(item.GetNamedValue(L"editorialIndex"),editorial.Size()));
+                    require(ordinal<editorial.Size()&&ordinal>last_ordinal.at(id)&&edge_matches(editorial.GetObjectAt(ordinal)),
+                        "A subsequent choice revision needs its exact chronological editorial edge");
+                    JsonArray prefix;for(unsigned i=0;i<ordinal;++i)prefix.Append(editorial.GetAt(i));
+                    JsonObject provenance;provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                    provenance.Insert(L"locale",JsonValue::CreateStringValue(key(locale)));
+                    provenance.Insert(L"editorial",prefix);
+                    require(text(item,"historySha256")==fingerprint(provenance),
+                        "A subsequent choice revision changed its complete editorial prefix");
+                }else{
+                    bool found=false;
+                    for(unsigned i=0;i<editorial.Size();++i)if(edge_matches(editorial.GetObjectAt(i))){
+                        require(!found,"Repeated first choice editorial edge");found=true;ordinal=i;
+                    }
+                    require(found,"A general choice revision needs its exact archived editorial edge");
+                }
+                last_ordinal[id]=ordinal;
+                general_choice_revisions[id].push_back(item);
+                semantic_revisions.emplace_back(item,result.choice_revisions.size());
             }else{
                 allowed_keys(item,{"id","block"},true);
                 require(reviewed&&text(snapshot,"type")=="multiple_choice"&&
@@ -2985,9 +3057,34 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             if(item.HasKey(L"optionIndex")) {
                 record.general_option_index=integer(item.GetNamedValue(L"optionIndex"),
                     static_cast<std::size_t>(array(snapshot,"options").Size()-1));
-                record.original_option_text_semantics=std::move(previous_option_semantic);
+                const auto revised=general_choice_after(item);
+                record.representation_signature=sha256(choice_representation_frame(read_block(revised,utf8(revised.Stringify()))));
             }
             result.choice_revisions.push_back(std::move(record));
+        }
+        // The latest overlay is validated against the latest option edge.
+        // Rewind each exact old descriptor to validate any earlier edit of
+        // that same index without rebinding its marks to today's wording.
+        JsonObject shadow;
+        if(root.HasKey(L"textSemantics"))shadow.Insert(L"textSemantics",
+            JsonObject::Parse(root.GetNamedObject(L"textSemantics").Stringify()));
+        for(auto it=semantic_revisions.rbegin();it!=semantic_revisions.rend();++it){
+            const auto& [item,slot]=*it;
+            result.choice_revisions[slot].original_option_text_semantics=
+                validate_general_choice_semantic_archive(shadow,item);
+            if(!shadow.HasKey(L"textSemantics"))continue;
+            auto overlay=shadow.GetNamedObject(L"textSemantics");
+            JsonArray fields;
+            const auto owner=text(item,"id"),path="/options/"+std::to_string(
+                integer(item.GetNamedValue(L"optionIndex"),100000));
+            const auto prior=item.GetNamedValue(L"semanticBefore");
+            for(const auto& value:array(overlay,"fields")){
+                const auto field=value.GetObject();
+                if(text(field,"block")==owner&&text(field,"path")==path){
+                    if(prior.ValueType()!=JsonValueType::Null)fields.Append(prior);
+                }else fields.Append(value);
+            }
+            overlay.Insert(L"fields",fields);
         }
     }
     if (metadata.HasKey(L"orderRefinements")) {
@@ -3851,7 +3948,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // Authenticate the option-only publication, not a shortcut from its
     // archive to the latest prose. Later question/explanation edges continue
     // the same ordered chain and must keep their own exact current head.
-    for(const auto& [id,review]:general_choice_revisions) {
+    for(const auto& [id,revisions]:general_choice_revisions)for(const auto& review:revisions) {
         const auto original=review.GetNamedObject(L"block");
         const auto option_only=JsonObject::Parse(original.Stringify());
         const auto position=integer(review.GetNamedValue(L"optionIndex"),
@@ -3915,7 +4012,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto general=general_choice_revisions.find(id);
             if(general!=general_choice_revisions.end())
                 require_formatted_question_semantics(root,id,
-                    general->second.GetNamedObject(L"block"),projected);
+                    general->second.back().GetNamedObject(L"block"),projected);
             const auto normalized_choice=general!=general_choice_revisions.end()?
                 general_choice_projection(projected,general->second):projected;
             const auto digest=state_fingerprint(normalized_choice);
@@ -5146,8 +5243,13 @@ void resolve_addresses(Lesson& lesson) {
                     std::string(reviewed->label_before),current_label};
             }
             if(const auto choice=choices.find(block.stable_id);choice!=choices.end()) {
-                choice->second->representation_signature=sha256(choice_representation_frame(block));
+                const auto signature=sha256(choice_representation_frame(block));
+                if(!choice->second->general_option_index)choice->second->representation_signature=signature;
+                // The append-only StateStore journal retains each edge's
+                // own signature. The active response view uses today's
+                // representation, at the same historical storage address.
                 block.choice_revision=*choice->second;
+                block.choice_revision->representation_signature=signature;
             }
             if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end())block.compiler_revision=*compiler->second;
             if(const auto history=case_orders.find(block.stable_id);history!=case_orders.end())
@@ -5259,9 +5361,13 @@ void resolve_addresses(Lesson& lesson) {
                 if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end() &&
                     block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature)
                     block.order_refinement = *refinement->second;
-                if(const auto choice=choices.find(block.stable_id);choice!=choices.end()&&
-                    block.type==BlockType::multiple_choice&&sha256(choice_representation_frame(block))==choice->second->representation_signature)
-                    block.choice_revision=*choice->second;
+                if(block.type==BlockType::multiple_choice){
+                    const auto signature=sha256(choice_representation_frame(block));
+                    const auto choice=std::ranges::find_if(layout.choice_revisions,[&](const auto& record){
+                        return record.id==block.stable_id&&record.representation_signature==signature;
+                    });
+                    if(choice!=layout.choice_revisions.end())block.choice_revision=*choice;
+                }
                 if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end()&&block.type==BlockType::cpp_compiler&&
                     state_fingerprint(protected_source)==compiler->second->current_payload)block.compiler_revision=*compiler->second;
                 block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));

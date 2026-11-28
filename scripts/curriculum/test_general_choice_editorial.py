@@ -710,6 +710,47 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate_transition(original, forged)
 
+    def test_successive_option_epochs_preserve_every_original_index_and_marker(self):
+        first = self.revise()
+        other = layout._blocks(first)[OWNER]["options"][1]
+        second = layout.revise_choice_editorial(first, OWNER, 1, other + " (QA segunda).",
+                                                spans=[])
+        third = layout.revise_choice_editorial(second, OWNER, 0, REVISED + " (QA posterior).",
+                                               spans=[])
+        # Same owner, two distinct indices, and a subsequent publication of
+        # the first index. Both direct and incremental transitions must pass.
+        for before, after in ((self.original, first), (first, second),
+                              (second, third), (self.original, third), (first, third)):
+            layout.validate_transition(before, after)
+            aligned = layout.align_for_previous_validation(before, after)
+            self.assertEqual(layout._blocks(aligned)[OWNER]["options"],
+                             layout._blocks(before)[OWNER]["options"])
+            layout.text_semantics.validate(aligned)
+        records = layout._general_choice_records(third, OWNER)
+        self.assertEqual([record["optionIndex"] for record in records], [0, 1, 0])
+        self.assertEqual(records[0], first["stateLayout"]["choiceRevisions"][0])
+        self.assertEqual(layout.original_projection(third), layout.original_projection(self.original))
+        for fault in ("index", "previous", "prefix", "sibling", "answer", "marker", "duplicate"):
+            forged = deepcopy(third)
+            archive = forged["stateLayout"]["choiceRevisions"][-1]
+            block = layout._blocks(forged)[OWNER]
+            if fault == "index":
+                archive["optionIndex"] = 2
+            elif fault == "previous":
+                archive["block"]["options"][0] = "QA origen inventado"
+            elif fault == "prefix":
+                archive["historySha256"] = "0" * 64
+            elif fault == "sibling":
+                block["options"][2] += " QA falso"
+            elif fault == "answer":
+                block["correctIndex"] = (block["correctIndex"] + 1) % len(block["options"])
+            elif fault == "marker":
+                archive["semanticBefore"] = None
+            else:
+                forged["stateLayout"]["choiceRevisions"].append(deepcopy(archive))
+            with self.subTest(fault=fault), self.assertRaises(ValueError):
+                layout.validate_transition(self.original, forged)
+
     def test_rejects_stale_or_rewritten_narration_marking(self):
         valid = self.revise()
         changed = deepcopy(valid)

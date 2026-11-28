@@ -1153,7 +1153,13 @@ struct LessonView {
         previous_scripts.push_back({identity,reading_regions()});
         for(std::size_t index=0;index<lesson.pages[page].blocks.size();++index){
             const auto& current=block(index);if(!current.choice_revision)continue;
-            const auto& revision=*current.choice_revision;auto original=current;
+            std::vector<const curriculum::ChoiceRevision*> history;
+            for(const auto& record:lesson.state_layout.choice_revisions)
+                if(record.id==current.stable_id)history.push_back(&record);
+            if(history.empty())history.push_back(&*current.choice_revision);
+            auto scripts=previous_scripts;
+            for(auto it=history.rbegin();it!=history.rend();++it){
+            const auto& revision=**it;auto original=current;
             original.options=revision.original_options;original.question=revision.original_question;
             original.correct_index=revision.original_correct_index;original.explanation=revision.original_explanation;
             original.review_feedback=revision.original_review_feedback;original.review_feedback_options=revision.original_review_feedback_options;
@@ -1167,7 +1173,7 @@ struct LessonView {
                 old_feedback="✗ "+verdict_text(false)+"\n\n"+review;
             }
             std::vector<LessonReadingArchive> variants;
-            for(const auto& previous:previous_scripts){
+            for(const auto& previous:scripts){
                 const auto question=std::ranges::find_if(previous.regions,[&](const auto& region){
                     return region.block_index==index&&region.target==find_item(control_id(index,0))&&!region.feedback;
                 });
@@ -1207,16 +1213,12 @@ struct LessonView {
                                 }else{
                                     // All OTHER options keep their exact published
                                     // wording and original source selections.
-                                    const auto path="/options/"+std::to_string(option);
-                                    const auto annotated=current.text_semantics.find(path);
-                                    if(annotated==current.text_semantics.end())
+                                    // This earlier epoch already carries its
+                                    // own descriptor from the preceding rewind.
+                                    // Never copy a later option's offsets.
+                                    if(region.text_semantics&&
+                                       region.text_semantics->source!=region.source_text)
                                         region.text_semantics.reset();
-                                    else{
-                                        auto historic=annotated->second;
-                                        historic.source=region.source_text;
-                                        curriculum::validate_text_semantics(historic);
-                                        region.text_semantics=std::move(historic);
-                                    }
                                 }
                             }
                         }
@@ -1231,7 +1233,9 @@ struct LessonView {
                 variants.push_back(std::move(archived));
             }
             archives.insert(archives.end(),variants.begin(),variants.end());
+            scripts=variants;
             previous_scripts.insert(previous_scripts.end(),std::make_move_iterator(variants.begin()),std::make_move_iterator(variants.end()));
+            }
         }
         return archives;
     }

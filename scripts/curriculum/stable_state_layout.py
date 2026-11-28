@@ -896,7 +896,12 @@ def _historical_order_contract(document: dict, identity: str, block: dict, *, al
 
 
 def _choice_revisions(document: dict) -> dict[str, dict]:
-    return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("choiceRevisions", [])}
+    # Each owner retains its FIRST complete historical block. Subsequent
+    # option-only edges never replace the historical response contract.
+    result = {}
+    for item in document.get("stateLayout", {}).get("choiceRevisions", []):
+        result.setdefault(item["id"], item["block"])
+    return result
 
 
 def _math_text_revisions(document: dict) -> dict[str, dict]:
@@ -1080,9 +1085,78 @@ def _require_math_prompt_authorship(previous: dict, current: dict, identity: str
                 "A revised marked math field cannot silently lose all its authored highlights")
 
 
+def _general_choice_records(document: dict, identity: str | None = None) -> list[dict]:
+    return [item for item in document.get("stateLayout", {}).get("choiceRevisions", [])
+            if "optionIndex" in item and (identity is None or item["id"] == identity)]
+
+
 def _general_choice_revision(document: dict, identity: str) -> dict | None:
-    return next((item for item in document.get("stateLayout", {}).get("choiceRevisions", [])
-                 if item["id"] == identity and "optionIndex" in item), None)
+    return next(iter(_general_choice_records(document, identity)), None)
+
+
+def _choice_record_after(item: dict) -> dict:
+    block = deepcopy(item["block"])
+    block["options"][item["optionIndex"]] = item["replacement"]
+    return block
+
+
+def _choice_record_after_marker(item: dict):
+    if "semanticAfter" in item:
+        return item["semanticAfter"]
+    marker = deepcopy(item["semanticBefore"])
+    if marker is not None:
+        marker["sourceSha256"] = hashlib.sha256(item["replacement"].encode("utf-8")).hexdigest()
+    return marker
+
+
+def _choice_record_edge(item: dict) -> dict:
+    return {"id": item["id"], "beforeSha256": fingerprint(item["block"]),
+            "afterSha256": fingerprint(_choice_record_after(item))}
+
+
+def _choice_record_ordinal(document: dict, item: dict) -> int:
+    history = document["stateLayout"]["editorial"]
+    edge = _choice_record_edge(item)
+    if "editorialIndex" in item:
+        index = item["editorialIndex"]
+        require(type(index) is int and 0 <= index < len(history)
+                and history[index] == edge
+                and _digest(item["historySha256"]) == fingerprint({
+                    "lessonId": document["id"], "locale": document["stateLayout"]["locale"],
+                    "editorial": history[:index]}),
+                "A subsequent choice revision needs its exact ordered editorial edge and prefix")
+        return index
+    candidates = [index for index, proof in enumerate(history) if proof == edge]
+    require(len(candidates) == 1, "A general choice revision needs its exact archived editorial edge")
+    return candidates[0]
+
+
+def _general_choice_chain_projection(records: list[dict], block: dict, *,
+                                     reading_snapshot: bool = False) -> dict:
+    if len(records) == 1:
+        return _general_choice_projection(records[0], block, reading_snapshot=reading_snapshot)
+    original = records[0]["block"]
+    previous = records[0]
+    for item in records[1:]:
+        # The previous complete option epoch, not its origin, owns all
+        # sibling option strings. Ordinary wording edits may be interleaved.
+        require(item["block"]["options"] == _choice_record_after(previous)["options"],
+                "A later option revision changed an unauthenticated sibling")
+        _general_choice_projection(previous, item["block"])
+        previous = item
+    if reading_snapshot:
+        versions = [original["options"]] + [_choice_record_after(item)["options"] for item in records]
+        require(block.get("type") == "multiple_choice" and block.get("options") in versions,
+                "A historical choice does not belong to one complete option epoch")
+    else:
+        require(block.get("options") == _choice_record_after(records[-1])["options"],
+                "A general choice history does not match its active options")
+        _general_choice_projection(records[-1], block)
+    result = deepcopy(block)
+    result["options"] = deepcopy(original["options"])
+    require(state_fingerprint(result) == state_fingerprint(original),
+            "A choice history changed the protected response contract")
+    return result
 
 
 def _choice_semantic_entry(document: dict, identity: str, option_index: int) -> dict | None:
@@ -1151,7 +1225,8 @@ def _require_formatted_question_authorship(previous: dict, current: dict,
 
 def _general_choice_semantic_projection(
         document: dict, *, identities: set[str] | None = None,
-        preserve_unrelated_fields: bool = False) -> dict | None:
+        preserve_unrelated_fields: bool = False,
+        records: list[dict] | None = None) -> dict | None:
     """Restore exact previous option marks, never the revised UTF-16 offsets.
 
     With identities omitted, recover the original publication as before.
@@ -1159,14 +1234,17 @@ def _general_choice_semantic_projection(
     introduced by that transition; marks authored for other current fields
     must remain intact for the curricular comparison.
     """
+    selected = _general_choice_records(document) if records is None else records
     overlay = deepcopy(document.get(text_semantics.ROOT_FIELD))
     if overlay is None:
+        require(all(_choice_record_after_marker(item) is None for item in selected),
+                "A revised choice lost its authenticated semantic root")
         return None
     shadow = {**document, text_semantics.ROOT_FIELD: overlay}
     introduced_root = False
-    for item in document.get("stateLayout", {}).get("choiceRevisions", []):
-        if "optionIndex" not in item:
-            continue
+    # Undo only the selected journal suffix, newest to oldest. In particular,
+    # the second edit of index 0 must not replace its first historical marker.
+    for item in reversed(selected):
         identity, index = item["id"], item["optionIndex"]
         if identities is not None and identity not in identities:
             continue
@@ -1244,13 +1322,13 @@ def _historical_choice_contract(document: dict, identity: str, block: dict,
     # this projection. Keep current prose/guidance for its ordinary validator.
     if identity not in _choice_revisions(document):
         return block
-    if (general := _general_choice_revision(document, identity)) is not None:
+    if general := _general_choice_records(document, identity):
         if reading_snapshot:
             nodes = {proof[field] for proof in document["stateLayout"]["editorial"]
                      if proof["id"] == identity for field in ("beforeSha256", "afterSha256")}
             require(fingerprint(block) in nodes,
                     "A historical choice needs an exact source in its owner's editorial history")
-        return _general_choice_projection(general, block, reading_snapshot=reading_snapshot)
+        return _general_choice_chain_projection(general, block, reading_snapshot=reading_snapshot)
     result = historical_choice_payload(block)
     spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
     if spec is not None and "paired_explanation" in spec:
@@ -2687,7 +2765,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             raise LayoutError(f"Unsafe source formatting for {identity}: {exc}") from exc
         formatted[identity] = original
     choice_revisions = meta.get("choiceRevisions", [])
-    require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS) + 64,
+    require(type(choice_revisions) is list and len(choice_revisions) <= 100_000,
             "Malformed reviewed choice archive")
     require(not choice_revisions or meta["locale"] == "es", "Choice revisions are authorized only for Spanish")
     choices = {}
@@ -2696,12 +2774,14 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(type(item) is dict and {"id", "block"} <= set(item),
                 "A choice revision needs its identity and complete original block")
         identity = _identity(item["id"])
-        require(identity in storage and identity not in choices and identity not in general_choices,
+        require(identity in storage and identity not in choices
+                and (identity not in general_choices or "editorialIndex" in item),
                 "Unknown or repeated choice revision identity")
         spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
         original = item["block"]
         if set(item) == {"id", "block"}:
-            require(spec is not None, "This closed choice revision belongs to its reviewed Spanish owner")
+            require(spec is not None and identity not in general_choices,
+                    "This closed choice revision belongs to its reviewed Spanish owner")
             require(type(original) is dict and original.get("type") == "multiple_choice"
                     and fingerprint(original) == spec["full_before"]
                     and fingerprint(_choice_payload(original)) == spec["protected_before"],
@@ -2712,7 +2792,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         else:
             legacy_fields = {"id", "block", "optionIndex", "replacement", "semanticBefore"}
             explicit_fields = {"semanticAfter", "semanticRootBefore"}
-            require(set(item) in (legacy_fields, legacy_fields | explicit_fields)
+            prior_records = general_choices.get(identity, [])
+            journal_fields = {"editorialIndex", "historySha256"} if prior_records else set()
+            require(set(item) in (legacy_fields | journal_fields,
+                                   legacy_fields | explicit_fields | journal_fields)
                     and spec is None,
                     "A general choice review needs its original, one option and authenticated semantic archive")
             require(type(original) is dict and original.get("type") == "multiple_choice"
@@ -2725,26 +2808,17 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     and type(item["replacement"]) is str and bool(item["replacement"].strip())
                     and original["options"][index] != item["replacement"],
                     "General choice review needs exactly one real nonblank text revision")
-            require(state_fingerprint(original) == digests[identity],
+            origin = deepcopy(original)
+            if prior_records:
+                origin["options"] = deepcopy(prior_records[0]["block"]["options"])
+            require(state_fingerprint(origin) == digests[identity],
                     "General choice archive must match this owner's original response contract")
-            active = active_blocks.get(identity)
-            require(type(active) is dict,
+            ordinal = _choice_record_ordinal(document, item)
+            if prior_records:
+                require(ordinal > _choice_record_ordinal(document, prior_records[-1]),
+                        "Choice revisions must keep their actual chronological order")
+            require(type(active_blocks.get(identity)) is dict,
                     "General choice review must keep its original activity active")
-            _general_choice_projection(item, active)
-            # A later question/explanation edit on the SAME option owner is
-            # a separate publication. Do not inherit the original narration
-            # of a changed sentence or authorize an unmarked wording change.
-            option_only = deepcopy(original)
-            option_only["options"][index] = item["replacement"]
-            for path in ordinary_editorial_paths(option_only, active):
-                overlay = document.get(text_semantics.ROOT_FIELD) or {}
-                require(type(overlay) is dict and type(overlay.get("fields")) is list,
-                        "A later choice-owner prose revision needs authored text semantics")
-                markers = [marker for marker in overlay["fields"]
-                           if type(marker) is dict and marker.get("block") == identity
-                           and marker.get("path") == path]
-                require(len(markers) == 1,
-                        "A later choice-owner prose revision needs its own text descriptor")
             semantic_before = item["semanticBefore"]
             selected_before = original["options"][index]
             if semantic_before is not None:
@@ -2757,7 +2831,6 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     text_semantics._descriptor(semantic_before, selected_before)
                 except (KeyError, TypeError, ValueError) as exc:
                     raise LayoutError("Archived choice semantic spans are invalid") from exc
-            semantic_after = _choice_semantic_entry(document, identity, index)
             if "semanticAfter" in item:
                 expected_semantic = item["semanticAfter"]
                 require(type(item["semanticRootBefore"]) is bool
@@ -2780,9 +2853,20 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 if expected_semantic is not None:
                     expected_semantic["sourceSha256"] = hashlib.sha256(
                         item["replacement"].encode("utf-8")).hexdigest()
-            require(semantic_after == expected_semantic,
-                    "A revised choice changed, inserted or lost authenticated semantic spans")
-            general_choices[identity] = item
+            general_choices.setdefault(identity, []).append(item)
+    for identity, records in general_choices.items():
+        active = active_blocks[identity]
+        _general_choice_chain_projection(records, active)
+        option_only = _choice_record_after(records[-1])
+        for path in ordinary_editorial_paths(option_only, active):
+            markers = [marker for marker in document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+                       if marker.get("block") == identity and marker.get("path") == path]
+            require(len(markers) == 1,
+                    "A later choice-owner prose revision needs its own text descriptor")
+    # Rewind every marker through its own archived text epoch. This verifies
+    # the final and all intermediate descriptors even for repeated indices.
+    if general_choices:
+        _general_choice_semantic_projection(document)
     compiler_revisions = meta.get("compilerRevisions", [])
     require(type(compiler_revisions) is list and len(compiler_revisions) <= len(COMPILER_CASE_REVISIONS),
             "Malformed reviewed compiler archive")
@@ -2870,7 +2954,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         "A revised compiler reference requires its matching expanded compiler and archive")
             projected = order_contract_projection(source, refined[identity]) if identity in refined else source
             if identity in general_choices:
-                projected = _general_choice_projection(general_choices[identity], projected)
+                projected = _general_choice_chain_projection(general_choices[identity], projected)
             if identity in math_texts:
                 projected = _math_prompt_projection(math_texts[identity], projected)
             require(state_fingerprint(projected) == digests[identity],
@@ -7980,9 +8064,10 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
             continue
         predecessor = block
         if identity in choice_revisions:
-            choice = choice_revisions[identity]
+            revisions = choice_revisions[identity]
             predecessor = deepcopy(block)
-            predecessor["options"][choice["optionIndex"]] = choice["replacement"]
+            for choice in revisions if type(revisions) is list else [revisions]:
+                predecessor["options"][choice["optionIndex"]] = choice["replacement"]
         allowed.update((identity, path)
                        for path in ordinary_editorial_paths(predecessor, after.get(identity)))
         updated = after.get(identity)
@@ -8161,8 +8246,9 @@ def revise_choice_editorial(document: dict, identity: str,
     require(meta.get("version") == 2 and meta.get("locale") == "es",
             "General choice review requires a published Spanish v2 lesson")
     _identity(identity)
-    require(identity not in _choice_revisions(document),
-            "A reviewed choice cannot be revised twice under one historical archive")
+    prior_records = _general_choice_records(document, identity)
+    require(identity not in _choice_revisions(document) or bool(prior_records),
+            "A closed choice revision cannot acquire an ordinary option history")
     require(CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) is None,
             "A closed reviewed choice has its own existing revision contract")
     original = _blocks(document).get(identity)
@@ -8206,6 +8292,10 @@ def revise_choice_editorial(document: dict, identity: str,
     if spans is not None:
         record["semanticAfter"] = deepcopy(revised)
         record["semanticRootBefore"] = previous_root
+    if prior_records:
+        record["editorialIndex"] = len(meta["editorial"])
+        record["historySha256"] = fingerprint({"lessonId": document["id"], "locale": meta["locale"],
+                                                "editorial": meta["editorial"]})
     result["stateLayout"].setdefault("choiceRevisions", []).append(record)
     result["stateLayout"]["editorial"].append({
         "id": identity, "beforeSha256": fingerprint(original),
@@ -8678,10 +8768,31 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     choices = meta.get("choiceRevisions", [])
     require(choices[:len(old_choices)] == old_choices,
             "Published choice revisions are append-only and cannot be removed or replaced")
+    new_general_choices = [item for item in choices[len(old_choices):] if "optionIndex" in item]
+    multi_owners = {item["id"] for item in new_general_choices
+                    if len(_general_choice_records(current, item["id"])) > 1}
+    # A new multi-edge option publication has complete intermediate block
+    # snapshots. Keep all previous records immutable and prove every appended
+    # edit against the exact currently published state, not an origin guess.
+    for identity in multi_owners:
+        records = [item for item in new_general_choices if item["id"] == identity]
+        predecessor = before[identity]
+        actual_edges = [edge for edge in meta["editorial"][len(old_editorial):]
+                        if edge["id"] == identity]
+        require(actual_edges == [_choice_record_edge(item) for item in records],
+                "A multi-option publication must authenticate every intervening owner edge")
+        for item in records:
+            require(item["block"] == predecessor,
+                    "A multi-option revision changed its exact previous published block")
+            predecessor = _choice_record_after(item)
+        require(predecessor == after[identity],
+                "A multi-option publication differs from its final archived edge")
     for item in choices[len(old_choices):]:
         identity = item["id"]
         require(identity in before,
                 "A new choice revision must belong to a previously published owner")
+        if identity in multi_owners:
+            continue
         if fingerprint(item["block"]) != fingerprint(before[identity]):
             # One separately authenticated prose revision may precede the
             # option edit within a release that skips the intermediate Git
@@ -8708,7 +8819,6 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 require(item["semanticRootBefore"] ==
                         (text_semantics.ROOT_FIELD in baseline),
                         "A choice revision falsified the original semantic root")
-    new_general_choices = [item for item in choices[len(old_choices):] if "optionIndex" in item]
     if new_general_choices:
         # A single response-text precision must not silently repaint another
         # source, move spans, or claim that a new sentence was already read.
@@ -8723,6 +8833,13 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                                            if field["block"] not in retiring_owners]
             expectation = {**baseline, text_semantics.ROOT_FIELD: expected_semantics}
         for item in new_general_choices:
+            if item["id"] in multi_owners:
+                require(item["semanticBefore"] == _choice_semantic_entry(
+                    expectation, item["id"], item["optionIndex"]),
+                    "A successive choice semantic archive differs from its actual predecessor")
+                if "semanticAfter" in item:
+                    require(item["semanticRootBefore"] == (expected_semantics is not None),
+                            "A successive choice revision falsified its semantic root")
             if "semanticAfter" in item:
                 if expected_semantics is None:
                     expected_semantics = {"version": 1, "fields": []}
@@ -8740,7 +8857,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                         item["replacement"].encode("utf-8")).hexdigest()
         expected_semantics = _compose_ordinary_editorial_semantics(
             baseline, current, expected_semantics,
-            {item["id"]: item for item in new_general_choices})
+            {identity: [item for item in new_general_choices if item["id"] == identity]
+             for identity in {item["id"] for item in new_general_choices}})
         require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
                 "Editorial choice revised an unrelated text marker or semantic span")
     new_closed_sources = _new_closed_compiler_sources(baseline, current)
@@ -9392,6 +9510,13 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     old_choices = _choice_revisions(old)
     blocks = {identity: _historical_choice_contract(current, identity, block)
               if identity not in old_choices else block for identity, block in blocks.items()}
+    appended_choices = [item for item in current["stateLayout"].get("choiceRevisions", [])[
+                         len(old["stateLayout"].get("choiceRevisions", [])):]
+                        if "optionIndex" in item]
+    for identity in {item["id"] for item in appended_choices} & old_choices.keys():
+        block = deepcopy(blocks[identity])
+        block["options"] = deepcopy(_all_blocks(old)[identity]["options"])
+        blocks[identity] = block
     blocks = {identity: _compiler_case_order_realign(old, current, identity, block)
               if _compiler_case_events(current, identity) else block
               for identity, block in blocks.items()}
@@ -9429,15 +9554,12 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
               for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
-    new_choices = _choice_revisions(current).keys() - old_choices.keys()
-    new_general_choices = {item["id"] for item in current["stateLayout"].get("choiceRevisions", [])
-                           if item["id"] in new_choices and "optionIndex" in item}
-    if new_general_choices:
+    if appended_choices:
         # The source block above has been restored to the prior wording.
         # Its descriptor must follow that SAME prior wording. A later option
         # with newly moved marks cannot leak its text hash or old reading.
         overlay = _general_choice_semantic_projection(
-            current, identities=new_general_choices, preserve_unrelated_fields=True)
+            current, records=appended_choices, preserve_unrelated_fields=True)
         if overlay is None:
             result.pop(text_semantics.ROOT_FIELD, None)
         else:

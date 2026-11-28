@@ -1532,8 +1532,16 @@ def preserves_general_choice_option_revision(relative, pn, bn, old, current, *,
             return False
         identity = owners[0]
         if (_state_layout._blocks(baseline).get(identity) != old
-                or _state_layout._blocks(current_document).get(identity) != current
-                or _state_layout._general_choice_revision(previous_document, identity) is not None):
+                or _state_layout._blocks(current_document).get(identity) != current):
+            return False
+        records = _state_layout._general_choice_records(current_document, identity)
+        prior = _state_layout._general_choice_records(previous_document, identity)
+        if len(records) > 1:
+            # The complete transition above already proves the ordered option
+            # snapshots, every index, source descriptor and immutable origin.
+            # Do not re-evaluate the option text as a different answer.
+            return len(records) > len(prior) and old["options"] != current["options"]
+        if prior:
             return False
         archive = _state_layout._general_choice_revision(current_document, identity)
         if (type(archive) is not dict
